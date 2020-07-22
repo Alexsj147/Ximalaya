@@ -1,9 +1,11 @@
-package zjc.example.ximalaya.base;
+package alex.example.ximalaya.base;
 
 import android.app.Application;
 
 import com.ximalaya.ting.android.opensdk.constants.DTransferConstants;
 import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
+
+import alex.example.ximalaya.utils.LogUtil;
 
 public class BaseApplication extends Application {
     @Override
@@ -21,5 +23,7 @@ public class BaseApplication extends Application {
             mXimalaya.setPackid("com.ximalaya.qunfeng");
             mXimalaya.init(this ,mAppSecret);
         }
+        //初始化LogUtil
+        LogUtil.init(this.getPackageName(),true);
     }
 }

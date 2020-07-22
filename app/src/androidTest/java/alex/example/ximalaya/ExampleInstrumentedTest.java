@@ -1,4 +1,4 @@
-package zjc.example.ximalaya;
+package alex.example.ximalaya;
 
 import android.content.Context;
 
