@@ -53,7 +53,7 @@
                 <ImageView
                  android:layout_width="6dp"
                  android:layout_height="6dp"
-                 android:src="@mipmap/play_icon"/>
+                 android:src="@mipmap/play_info_icon"/>
 
                 <TextView
                     android:id="@+id/album_play_count"

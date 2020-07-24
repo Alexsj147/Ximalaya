@@ -28,16 +28,46 @@ import alex.example.ximalaya.interfaces.IRecommendCallBack;
 import alex.example.ximalaya.presenters.RecommendPresenter;
 import alex.example.ximalaya.utils.Constants;
 import alex.example.ximalaya.utils.LogUtil;
+import alex.example.ximalaya.views.UILoader;
 
-public class RecommendFragment extends BaseFragment implements IRecommendCallBack {
+public class RecommendFragment extends BaseFragment implements IRecommendCallBack, UILoader.OnRetryClickListener {
     private final static String TAG = "RecommendFragment";
     private View mRootView;
     private RecyclerView mRecommendRv;
     private RecommendListAdapter mRecommendListAdapter;
     private RecommendPresenter mRecommendPresenter;
+    private UILoader mUiLoader;
 
     @Override
-    protected View onSubViewLoaded(LayoutInflater layoutInflater, ViewGroup container) {
+    protected View onSubViewLoaded(final LayoutInflater layoutInflater, ViewGroup container) {
+        mUiLoader = new UILoader(getContext()) {
+            @Override
+            protected View getSuccessView(ViewGroup container) {
+                return createSuccessView(layoutInflater,container);
+            }
+        };
+
+
+
+        //获取数据
+        //getRecommendData();
+        // 获取到逻辑层的对象
+        mRecommendPresenter = RecommendPresenter.getInstance();
+        //设置通知接口的注册
+        mRecommendPresenter.registerViewCallBack(this);
+        //获取推荐列表
+        mRecommendPresenter.getRecommendList();
+
+        if (mUiLoader.getParent() instanceof ViewGroup) {
+            ((ViewGroup) mUiLoader.getParent()).removeView(mUiLoader);
+        }
+
+        mUiLoader.setOnRetryClickListener(this);
+        //返回view给界面显示
+        return mUiLoader;
+    }
+
+    private View createSuccessView(LayoutInflater layoutInflater, ViewGroup container) {
         //view加载完成
         mRootView = layoutInflater.inflate(R.layout.fragment_recommend,container,false);
         //RecyclerView
@@ -59,20 +89,8 @@ public class RecommendFragment extends BaseFragment implements IRecommendCallBac
         //3.设置适配器
         mRecommendListAdapter = new RecommendListAdapter();
         mRecommendRv.setAdapter(mRecommendListAdapter);
-        //获取数据
-        //getRecommendData();
-        // 获取到逻辑层的对象
-        mRecommendPresenter = RecommendPresenter.getInstance();
-        //设置通知接口的注册
-        mRecommendPresenter.registerViewCallBack(this);
-        //获取推荐列表
-        mRecommendPresenter.getRecommendList();
-        //返回view给界面显示
         return mRootView;
     }
-
-
-
 
 
     @Override
@@ -81,17 +99,24 @@ public class RecommendFragment extends BaseFragment implements IRecommendCallBac
         //更新UI
         //把数据设置给适配器
         mRecommendListAdapter.setData(result);
+        mUiLoader.updateStatus(UILoader.UIStatus.SUCCESS);
     }
 
     @Override
-    public void onLoaderMore(List<Album> result) {
-
+    public void onNetWorkError() {
+        mUiLoader.updateStatus(UILoader.UIStatus.NETWORK_ERROR);
     }
 
     @Override
-    public void onRefreshMore(List<Album> result) {
-
+    public void onEmpty() {
+        mUiLoader.updateStatus(UILoader.UIStatus.EMPTY);
     }
+
+    @Override
+    public void onLoading() {
+        mUiLoader.updateStatus(UILoader.UIStatus.LOADING);
+    }
+
 
     @Override
     public void onDestroyView() {
@@ -99,6 +124,15 @@ public class RecommendFragment extends BaseFragment implements IRecommendCallBac
         //取消注册,以免内存泄露
         if (mRecommendPresenter != null) {
             mRecommendPresenter.unRegisterViewCallBack(this);
+        }
+    }
+
+    @Override
+    public void onRetryClick() {
+        //表示网络不佳时，点击了重试
+        //重新获取数据
+        if (mRecommendPresenter != null) {
+            mRecommendPresenter.getRecommendList();
         }
     }
 }

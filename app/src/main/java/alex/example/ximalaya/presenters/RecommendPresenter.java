@@ -49,6 +49,7 @@ public class RecommendPresenter implements IRecommendPresenter {
     public void getRecommendList() {
         //获取推荐内容
         //封装参数
+        updateLoading();
         Map<String, String> map = new HashMap<String, String>();
         map.put(DTransferConstants.LIKE_COUNT, Constants.RECOMMEND_COUNT+"");
         CommonRequest.getGuessLikeAlbum(map, new IDataCallBack<GussLikeAlbumList>() {
@@ -71,17 +72,38 @@ public class RecommendPresenter implements IRecommendPresenter {
                 //获取数据失败
                 LogUtil.d(TAG,"error --> " + i);
                 LogUtil.d(TAG,"errorMsg --> " + s);
+                handlerError();
             }
         });
     }
 
-
-    private void handlerRecommendResult(List<Album> albumList) {
-        //通知UI
+    private void handlerError() {
         if (mCallBacks != null) {
             for (IRecommendCallBack callBack : mCallBacks) {
-                callBack.onRecommendListLoaded(albumList);
+                callBack.onNetWorkError();
             }
+        }
+    }
+
+
+    private void handlerRecommendResult(List<Album> albumList) {
+        //通知UI更新
+        if (albumList!=null) {
+            if (albumList.size()==0) {
+                for (IRecommendCallBack callBack : mCallBacks) {
+                    callBack.onEmpty();
+                }
+            }else {
+                for (IRecommendCallBack callBack : mCallBacks) {
+                    callBack.onRecommendListLoaded(albumList);
+                }
+            }
+        }
+    }
+
+    private void updateLoading(){
+        for (IRecommendCallBack callBack : mCallBacks) {
+            callBack.onLoading();
         }
     }
 
