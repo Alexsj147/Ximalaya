@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#fff4f4f4">
+
+    <ImageView
+        android:id="@+id/iv_large_cover"
+        android:layout_width="match_parent"
+        android:scaleType="fitXY"
+        android:layout_height="150dp"
+        />
+
+    <RelativeLayout
+        android:id="@+id/subscription_container"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_below="@+id/iv_large_cover"
+        android:background="@color/white">
+
+        <TextView
+            android:layout_width="75dp"
+            android:layout_height="30dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="14dp"
+            android:gravity="center"
+            android:background="@drawable/shape_subscription_bg"
+            android:textColor="@color/white"
+            android:text="+订阅"/>
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/player_control_container"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@id/subscription_container"
+        android:background="#e8e8e8">
+        <ImageView
+            android:id="@+id/detail_play_control"
+            android:layout_width="19dp"
+            android:layout_height="19dp"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:src="@mipmap/play_icon"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/detail_play_control"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="12dp"
+            android:textSize="14sp"
+            android:text="继续播放"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/detail_arrow"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="4dp"
+            android:text="选集"/>
+        <ImageView
+            android:id="@+id/detail_arrow"
+            android:layout_width="16dp"
+            android:layout_height="8dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="18dp"
+            android:src="@mipmap/arrow_icon"/>
+
+    </RelativeLayout>
+
+    <alex.example.ximalaya.views.RoundRectImageView
+        android:id="@+id/riv_small_cover"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_below="@+id/iv_large_cover"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="-40dp"
+        />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@+id/iv_large_cover"
+        android:layout_toRightOf="@id/riv_small_cover"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="-30dp">
+        <TextView
+            android:id="@+id/tv_album_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textColor="@color/white"
+            android:text="这是标题"/>
+
+        <TextView
+            android:id="@+id/tv_album_author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/alex_text_title"
+            android:layout_marginTop="5dp"
+            android:text="这是作者"/>
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/detail_list_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/player_control_container">
+    </FrameLayout>
+
+
+
+</RelativeLayout>

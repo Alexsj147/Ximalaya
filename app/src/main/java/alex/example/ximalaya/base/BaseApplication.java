@@ -1,11 +1,13 @@
 package alex.example.ximalaya.base;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.Handler;
 
 import com.ximalaya.ting.android.opensdk.constants.DTransferConstants;
 import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
-
+import com.ximalaya.ting.android.opensdk.player.XmPlayerManager;
+import com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl;
 
 
 import alex.example.ximalaya.utils.LogUtil;
@@ -13,6 +15,7 @@ import alex.example.ximalaya.utils.LogUtil;
 public class BaseApplication extends Application {
 
     private static Handler sHandler = null;
+    private static Context sContext =null;
 
 
     @Override
@@ -30,10 +33,19 @@ public class BaseApplication extends Application {
             mXimalaya.setPackid("com.ximalaya.qunfeng");
             mXimalaya.init(this ,mAppSecret);
         }
+        //初始化播放器
+        XmPlayerManager.getInstance(this).init();
+
         //初始化LogUtil
         LogUtil.init(this.getPackageName(), false);
 
         sHandler=new Handler();
+
+        sContext = getBaseContext();
+    }
+
+    public static Context getAppContext(){
+        return sContext;
     }
 
     public static Handler getHandler(){

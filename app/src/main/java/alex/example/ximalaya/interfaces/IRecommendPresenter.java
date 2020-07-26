@@ -2,7 +2,9 @@ package alex.example.ximalaya.interfaces;
 
 import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
 
-public interface IRecommendPresenter {
+import alex.example.ximalaya.base.IBasePresenter;
+
+public interface IRecommendPresenter extends IBasePresenter<IRecommendCallBack> {
     /**
      * 获取推荐内容
      */
@@ -15,14 +17,14 @@ public interface IRecommendPresenter {
      * 加载更多
      */
     void loadMore();
-    /**
+   /* *//**
      * 用于注册UI的回调
      * @param callBack
-     */
+     *//*
     void registerViewCallBack(IRecommendCallBack callBack);
-    /**
+    *//**
      * 取消注册
      * @param callBack
-     */
-    void unRegisterViewCallBack(IRecommendCallBack callBack);
+     *//*
+    void unRegisterViewCallBack(IRecommendCallBack callBack);*/
 }

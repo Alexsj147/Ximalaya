@@ -16,10 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alex.example.ximalaya.R;
+import alex.example.ximalaya.utils.LogUtil;
 
 public class RecommendListAdapter extends RecyclerView.Adapter<RecommendListAdapter.InnewHolder> {
 
     private List<Album> mData = new ArrayList<>();
+    private static final String TAG = "RecommendListAdapter";
+    private onRecommendItemClickListener mItemClickListener = null;
 
     @NonNull
     @Override
@@ -31,9 +34,19 @@ public class RecommendListAdapter extends RecyclerView.Adapter<RecommendListAdap
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecommendListAdapter.InnewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecommendListAdapter.InnewHolder holder, final int position) {
         //设置数据
         holder.itemView.setTag(position);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mItemClickListener != null) {
+                    int clickPositon = (int) v.getTag();
+                    mItemClickListener.onItemClick(clickPositon,mData.get(clickPositon));
+                }
+                LogUtil.d(TAG,"holder.itemView click -->" + v.getTag());
+            }
+        });
         holder.setData(mData.get(position));
     }
 
@@ -81,5 +94,12 @@ public class RecommendListAdapter extends RecyclerView.Adapter<RecommendListAdap
 
             Picasso.with(itemView.getContext()).load(album.getCoverUrlLarge()).into(albumCoverIv);
         }
+    }
+
+    public void setOnRecommendItemClickListener(onRecommendItemClickListener listener){
+        this.mItemClickListener = listener;
+    }
+    public interface onRecommendItemClickListener{
+        void onItemClick(int position, Album album);
     }
 }
