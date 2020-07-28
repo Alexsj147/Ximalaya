@@ -6,6 +6,7 @@ import com.ximalaya.ting.android.opensdk.model.advertis.AdvertisList;
 import com.ximalaya.ting.android.opensdk.model.track.Track;
 import com.ximalaya.ting.android.opensdk.player.XmPlayerManager;
 import com.ximalaya.ting.android.opensdk.player.advertis.IXmAdsStatusListener;
+import com.ximalaya.ting.android.opensdk.player.constants.PlayerConstants;
 import com.ximalaya.ting.android.opensdk.player.service.IXmPlayerStatusListener;
 import com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl;
 import com.ximalaya.ting.android.opensdk.player.service.XmPlayerException;
@@ -23,7 +24,8 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     private static final String TAG = "PlayPresenter";
     private final XmPlayerManager mPlayerManager;
     private List<IPlayerCallBack> mIPlayerCallBacks = new ArrayList<>();
-    private String mTrackTitle;
+    private Track mCurrentTrack;
+    private int mCurrentIndex = 0;
 
     private PlayPresenter(){
         mPlayerManager = XmPlayerManager.getInstance(BaseApplication.getAppContext());
@@ -31,6 +33,7 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
         mPlayerManager.addAdsStatusListener(this);
         //注册播放器状态相关的接口
         mPlayerManager.addPlayerStatusListener(this);
+
     }
     private static PlayPresenter sPlayPresenter;
     public static PlayPresenter getPlayPresenter(){
@@ -47,10 +50,11 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     private boolean isPlayListSet =false;
     public void setPlayList(List<Track> list , int playIndex){
         if (mPlayerManager != null) {
+
             mPlayerManager.setPlayList(list,playIndex);
             isPlayListSet=true;
-            Track track = list.get(playIndex);
-            mTrackTitle = track.getTrackTitle();
+            mCurrentTrack = list.get(playIndex);
+            mCurrentIndex = playIndex;
         }else {
             LogUtil.d(TAG,"mPlayerManager is null");
         }
@@ -59,6 +63,8 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     @Override
     public void play() {
         if (isPlayListSet){
+            //int playerStatus = mPlayerManager.getPlayerStatus();
+            //LogUtil.d(TAG,"status is == > " + playerStatus);
             mPlayerManager.play();
         }
     }
@@ -93,17 +99,27 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
 
     @Override
     public void switchPlayMode(XmPlayListControl.PlayMode mode) {
-
+        if (mPlayerManager != null) {
+            mPlayerManager.setPlayMode(mode);
+        }
     }
 
     @Override
     public void getPlayList() {
-
+        if (mPlayerManager != null) {
+            List<Track> playList = mPlayerManager.getPlayList();
+            for (IPlayerCallBack iPlayerCallBack : mIPlayerCallBacks) {
+                iPlayerCallBack.onListLoaded(playList);
+            }
+        }
     }
 
     @Override
     public void playByIndex(int index) {
-
+        //切换播放器到第index位置进行播放
+        if (mPlayerManager != null) {
+            mPlayerManager.play(index);
+        }
     }
 
     @Override
@@ -120,7 +136,7 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
 
     @Override
     public void registerViewCallBack(IPlayerCallBack iPlayerCallBack) {
-        iPlayerCallBack.onTrackTitleUpdate(mTrackTitle);
+        iPlayerCallBack.onTrackUpdate(mCurrentTrack,mCurrentIndex);
         if (!mIPlayerCallBacks.contains(iPlayerCallBack)) {
             mIPlayerCallBacks.add(iPlayerCallBack);
         }
@@ -201,6 +217,12 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     @Override
     public void onSoundPrepared() {
         LogUtil.d(TAG,"onSoundPrepared");
+        //LogUtil.d(TAG,"current status is == >" + mPlayerManager.getPlayerStatus());
+        if (mPlayerManager.getPlayerStatus()== PlayerConstants.STATE_PREPARED) {
+            //播放器准备好了
+            mPlayerManager.play();
+        }
+
     }
 
     @Override
@@ -219,15 +241,18 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
             LogUtil.d(TAG,"title == > "  + currentTrack.getTrackTitle());
         }*/
         //2.
+        mCurrentIndex = mPlayerManager.getCurrentIndex();
         if (curModel instanceof Track){
             Track currentTrack = (Track) curModel;
-            mTrackTitle = currentTrack.getTrackTitle();
+            mCurrentTrack = currentTrack;
             //LogUtil.d(TAG,"title == > "  + currentTrack.getTrackTitle());
             //更新UI
             for (IPlayerCallBack iPlayerCallBack : mIPlayerCallBacks) {
-                iPlayerCallBack.onTrackTitleUpdate(mTrackTitle);
+                iPlayerCallBack.onTrackUpdate(mCurrentTrack,mCurrentIndex);
             }
         }
+
+
     }
 
     @Override

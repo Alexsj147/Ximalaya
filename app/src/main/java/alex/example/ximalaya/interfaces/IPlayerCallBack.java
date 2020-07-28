@@ -68,8 +68,8 @@ public interface IPlayerCallBack {
     void onAdFinished();
 
     /**
-     * 更新当前节目的标题
-     * @param title
+     * 更新当前节目
+     * @param track
      */
-    void onTrackTitleUpdate(String title);
+    void onTrackUpdate(Track track , int playIndex);
 }
