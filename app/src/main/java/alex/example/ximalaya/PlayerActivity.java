@@ -1,11 +1,16 @@
 package alex.example.ximalaya;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -25,6 +30,7 @@ import alex.example.ximalaya.base.BaseActivity;
 import alex.example.ximalaya.interfaces.IPlayerCallBack;
 import alex.example.ximalaya.presenters.PlayPresenter;
 import alex.example.ximalaya.utils.LogUtil;
+import alex.example.ximalaya.views.AlexPopWindow;
 
 import static com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl.PlayMode.PLAY_MODEL_LIST;
 import static com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl.PlayMode.PLAY_MODEL_LIST_LOOP;
@@ -65,19 +71,48 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
         sPlayModeRule.put(PLAY_MODEL_SINGLE_LOOP,PLAY_MODEL_LIST);
     }
 
+    private ImageView mPlayListBtn;
+    private AlexPopWindow mAlexPopWindow;
+    private ValueAnimator mEnterBgAnimator;
+    private ValueAnimator mOutBGAnimation;
+    public static final int BG_ANIMATION_DURATION = 500;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+        initView();
         mPlayPresenter = PlayPresenter.getPlayPresenter();
         mPlayPresenter.registerViewCallBack(this);
-
-
-        initView();
         //在界面初始化后获取数据
         mPlayPresenter.getPlayList();
         initEvent();
+        initBgAnimation();
+    }
 
+    private void initBgAnimation() {
+        mEnterBgAnimator = ValueAnimator.ofFloat(1.0f,0.7f);
+        mEnterBgAnimator.setDuration(BG_ANIMATION_DURATION);
+        mEnterBgAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float value = (float) animation.getAnimatedValue();
+                //处理一下背景，有点透明度
+                updateBgAlpha(value);
+                //LogUtil.d(TAG,"value -- >" + value);
+            }
+        });
+        //退出的
+        mOutBGAnimation = ValueAnimator.ofFloat(0.7f,1.0f);
+        mOutBGAnimation.setDuration(BG_ANIMATION_DURATION);
+        mOutBGAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float value = (float) animation.getAnimatedValue();
+                //处理一下背景，有点透明度
+                updateBgAlpha(value);
+            }
+        });
     }
 
     @Override
@@ -157,18 +192,61 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
         mPlayerModeSwitchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //处理播放模式的切换
-                //根据当前的mode获取下一个mode
-                XmPlayListControl.PlayMode playMode = sPlayModeRule.get(mCurrentMode);
-                //修改播放模式
-                if (mPlayPresenter != null) {
-                    mPlayPresenter.switchPlayMode(playMode);
-                    mCurrentMode = playMode;
-                    updatePlayModeBtnImg();
-                }
+                switchPlayMode();
 
             }
         });
+        mPlayListBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //展示播放列表
+                mAlexPopWindow.showAtLocation(v, Gravity.BOTTOM,0,0);
+                //处理一下背景，有点透明度
+                updateBgAlpha(0.8f);
+                //修改背景透明度，有一个渐变
+                mEnterBgAnimator.start();
+            }
+        });
+        mAlexPopWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+            @Override
+            public void onDismiss() {
+                //pop窗口消失后恢复
+               mOutBGAnimation.start();
+            }
+        });
+        mAlexPopWindow.setPlayListItemClickListener(new AlexPopWindow.PlayListItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                //播放列表的item被点击了
+                if (mPlayPresenter != null) {
+                    mPlayPresenter.playByIndex(position);
+                }
+            }
+        });
+        mAlexPopWindow.setPlayListPlayModeClickListener(new AlexPopWindow.PlayListPlayModeClickListener() {
+            @Override
+            public void onPlayModeClick() {
+                //切换播放模式
+                switchPlayMode();
+            }
+        });
+    }
+
+    private void switchPlayMode() {
+        //处理播放模式的切换
+        //根据当前的mode获取下一个mode
+        XmPlayListControl.PlayMode playMode = sPlayModeRule.get(mCurrentMode);
+        //修改播放模式
+        if (mPlayPresenter != null) {
+            mPlayPresenter.switchPlayMode(playMode);
+        }
+    }
+
+    public void updateBgAlpha(float alpha){
+        Window window = getWindow();
+        WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.alpha =alpha;
+        window.setAttributes(attributes);
     }
 
     /**
@@ -217,7 +295,9 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
 
         //切换播放模式的按钮
         mPlayerModeSwitchBtn = this.findViewById(R.id.player_mode_switch_btn);
-
+        //播放列表
+        mPlayListBtn = this.findViewById(R.id.player_list);
+        mAlexPopWindow = new AlexPopWindow();
     }
 
     @Override
@@ -264,11 +344,19 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
         if (mTrackPagerAdapter != null) {
             mTrackPagerAdapter.setData(list);
         }
+        //数据回来后，也要给节目表一份
+        if (mAlexPopWindow != null) {
+            mAlexPopWindow.setListData(list);
+        }
     }
 
     @Override
     public void onPlayModeChange(XmPlayListControl.PlayMode playMode) {
-
+        //更新播放模式，修改UI
+        mCurrentMode = playMode;
+        //更新pop里的播放模式
+        mAlexPopWindow.updatePlayMode(mCurrentMode);
+        updatePlayModeBtnImg();
     }
 
     @Override
@@ -322,6 +410,10 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
         //当前节目改变后，修改页面的图片
         if (mTrackPagerView != null) {
             mTrackPagerView.setCurrentItem(playIndex,true);
+        }
+        //修改播放列表里的播放位置
+        if (mAlexPopWindow != null) {
+            mAlexPopWindow.setCurrentPlatPosition(playIndex);
         }
     }
 

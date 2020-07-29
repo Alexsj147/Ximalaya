@@ -16,7 +16,7 @@
     <application
         android:allowBackup="true"
         android:name="alex.example.ximalaya.base.BaseApplication"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/logo"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/logo"
         android:supportsRtl="true"
