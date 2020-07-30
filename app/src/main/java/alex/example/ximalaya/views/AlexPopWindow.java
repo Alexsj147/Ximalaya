@@ -30,7 +30,10 @@ public class AlexPopWindow extends PopupWindow {
     private TextView mPlayModeTv;
     private ImageView mPlayModeIv;
     private View mPlayModeContainer;
-    private PlayListPlayModeClickListener mPlayModeClickListener =null;
+    private PlayListActionListener mPlayModeClickListener =null;
+    private View mOrderContainer;
+    private ImageView mOrderIcon;
+    private TextView mOrderText;
 
     public AlexPopWindow(){
         //设置宽高
@@ -62,6 +65,10 @@ public class AlexPopWindow extends PopupWindow {
         mPlayModeTv = mPopView.findViewById(R.id.play_list_play_mode_tv);
         mPlayModeIv = mPopView.findViewById(R.id.play_list_play_mode_iv);
         mPlayModeContainer = mPopView.findViewById(R.id.play_list_play_mode_container);
+        //播放顺序
+        mOrderContainer = mPopView.findViewById(R.id.play_list_order_container);
+        mOrderIcon = mPopView.findViewById(R.id.play_list_order_iv);
+        mOrderText = mPopView.findViewById(R.id.play_list_order_tv);
     }
 
     private void initEvent() {
@@ -75,10 +82,16 @@ public class AlexPopWindow extends PopupWindow {
         mPlayModeContainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //todo:切换播放模式
                 if (mPlayModeClickListener != null) {
                     mPlayModeClickListener.onPlayModeClick();
                 }
+            }
+        });
+        mOrderContainer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //todo:切换播放列表顺序逆序
+                mPlayModeClickListener.onOrderClick();
             }
         });
     }
@@ -107,6 +120,15 @@ public class AlexPopWindow extends PopupWindow {
     public void updatePlayMode(XmPlayListControl.PlayMode currentMode) {
         updatePlayModeBtnImg(currentMode);
     }
+
+    /**
+     * 更新播放列表顺序和逆序的切换
+     * @param isReverse
+     */
+    public void updateOrderIcon(boolean isReverse){
+        mOrderIcon.setImageResource(isReverse?R.drawable.selector_player_mode_list_order :R.drawable.selector_player_mode_list_reverse);
+        mOrderText.setText(BaseApplication.getAppContext().getString(isReverse?R.string.order_text_desc:R.string.order_text_aesc));
+    }
     /**
      * PLAY_MODEL_LIST
      * PLAY_MODEL_LIST_LOOP
@@ -115,11 +137,11 @@ public class AlexPopWindow extends PopupWindow {
      */
     private void updatePlayModeBtnImg(XmPlayListControl.PlayMode playMode) {
         //根据当前的状态更新播放模式的图标
-        int resId = R.drawable.selector_player_mode_list_order;
+        int resId = R.drawable.selector_player_mode_list_reverse;
         int textId = R.string.play_mode_order_text;
         switch (playMode){
             case PLAY_MODEL_LIST:
-                resId = R.drawable.selector_player_mode_list_order;
+                resId = R.drawable.selector_player_mode_list_reverse;
                 textId = R.string.play_mode_order_text;
                 break;
             case PLAY_MODEL_LIST_LOOP:
@@ -143,10 +165,13 @@ public class AlexPopWindow extends PopupWindow {
         void onItemClick(int position);
     }
 
-    public void setPlayListPlayModeClickListener(PlayListPlayModeClickListener playModeListener){
+    public void setPlayListActionListener(PlayListActionListener playModeListener){
         mPlayModeClickListener = playModeListener;
     }
-    public interface PlayListPlayModeClickListener{
+    public interface PlayListActionListener {
+        //播放模式被点击了
         void onPlayModeClick();
+        //顺序逆序按钮被点击了
+        void onOrderClick();
     }
 }

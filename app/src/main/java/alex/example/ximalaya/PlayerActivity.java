@@ -133,7 +133,7 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
             @Override
             public void onClick(View v) {
                 //如果正在播放，那么暂停
-                if (mPlayPresenter.isPlay()) {
+                if (mPlayPresenter.isPlaying()) {
                     mPlayPresenter.pause();
                 }else {
                     //非播放状态，那么就让播放器播放节目
@@ -223,14 +223,25 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
                 }
             }
         });
-        mAlexPopWindow.setPlayListPlayModeClickListener(new AlexPopWindow.PlayListPlayModeClickListener() {
+        mAlexPopWindow.setPlayListActionListener(new AlexPopWindow.PlayListActionListener() {
             @Override
             public void onPlayModeClick() {
                 //切换播放模式
                 switchPlayMode();
             }
+
+            @Override
+            public void onOrderClick() {
+                //点击了切换顺序和逆序
+                //Toast.makeText(PlayerActivity.this,"切换列表顺序",Toast.LENGTH_SHORT).show();
+                if (mPlayPresenter != null) {
+                    mPlayPresenter.reversePlayList();
+                }
+
+            }
         });
     }
+
 
     private void switchPlayMode() {
         //处理播放模式的切换
@@ -257,11 +268,11 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
      */
     private void updatePlayModeBtnImg() {
         //根据当前的状态更新播放模式的图标
-        int resId = R.drawable.selector_player_mode_list_order;
+        int resId = R.drawable.selector_player_mode_list_reverse;
 
         switch (mCurrentMode){
             case PLAY_MODEL_LIST:
-               resId = R.drawable.selector_player_mode_list_order;
+               resId = R.drawable.selector_player_mode_list_reverse;
                 break;
             case PLAY_MODEL_LIST_LOOP:
                 resId = R.drawable.selector_player_mode_list_order_looper;
@@ -417,6 +428,10 @@ public class PlayerActivity extends BaseActivity implements IPlayerCallBack, Vie
         }
     }
 
+    @Override
+    public void updateListOrder(boolean isReverse) {
+        mAlexPopWindow.updateOrderIcon(isReverse);
+    }
 
 
     @Override

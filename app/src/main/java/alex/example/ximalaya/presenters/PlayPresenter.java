@@ -15,6 +15,8 @@ import com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl;
 import com.ximalaya.ting.android.opensdk.player.service.XmPlayerException;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import alex.example.ximalaya.base.BaseApplication;
@@ -50,6 +52,7 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     public static final String PLAY_MODE_SP_NAME = "PlayMod";
     public static final String PLAY_MODE_SP_KEY = "currentPlayMode";
     private XmPlayListControl.PlayMode mCurrentPlayMode = PLAY_MODEL_LIST;
+    private boolean mIsReverse = false;
 
     private PlayPresenter(){
         mPlayerManager = XmPlayerManager.getInstance(BaseApplication.getAppContext());
@@ -123,6 +126,14 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
         }
     }
 
+    /**
+     * 判断是否播放有播放列表的节目
+     * @return
+     */
+    public boolean hsaPlayList(){
+        return isPlayListSet;
+    }
+
     @Override
     public void switchPlayMode(XmPlayListControl.PlayMode mode) {
         if (mPlayerManager != null) {
@@ -192,9 +203,28 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
     }
 
     @Override
-    public boolean isPlay() {
+    public boolean isPlaying() {
         //返回当前是否在播放
         return  mPlayerManager.isPlaying();
+    }
+
+    @Override
+    public void reversePlayList() {
+        //播放列表反转
+        List<Track> playList = mPlayerManager.getPlayList();
+        Collections.reverse(playList);
+        mIsReverse = !mIsReverse;
+        //1.播放列表  2.开始播放是下标
+        //切换播放列表顺序后，下标1->8 ==> 新的下标=总个数 - 1 -  当前的下标
+        mCurrentIndex = playList.size() - 1 -mCurrentIndex;
+        mPlayerManager.setPlayList(playList,mCurrentIndex);
+        //更新UI
+        mCurrentTrack = (Track) mPlayerManager.getCurrSound();
+        for (IPlayerCallBack iPlayerCallBack : mIPlayerCallBacks) {
+            iPlayerCallBack.onListLoaded(playList);
+            iPlayerCallBack.onTrackUpdate(mCurrentTrack,mCurrentIndex);
+            iPlayerCallBack.updateListOrder(mIsReverse);
+        }
     }
 
     @Override

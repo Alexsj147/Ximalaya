@@ -6,22 +6,28 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.lcodecore.tkrefreshlayout.RefreshListenerAdapter;
+import com.lcodecore.tkrefreshlayout.TwinklingRefreshLayout;
+import com.lcodecore.tkrefreshlayout.header.bezierlayout.BezierLayout;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
 import com.ximalaya.ting.android.opensdk.model.track.Track;
+import com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl;
 
 import net.lucode.hackware.magicindicator.buildins.UIUtil;
 
@@ -29,7 +35,9 @@ import java.util.List;
 
 import alex.example.ximalaya.adapters.DetailListAdapter;
 import alex.example.ximalaya.base.BaseActivity;
+import alex.example.ximalaya.base.BaseApplication;
 import alex.example.ximalaya.interfaces.IAlbumDetailViewCallBack;
+import alex.example.ximalaya.interfaces.IPlayerCallBack;
 import alex.example.ximalaya.presenters.AlbumDetailPresenter;
 import alex.example.ximalaya.presenters.PlayPresenter;
 import alex.example.ximalaya.utils.ImageBlur;
@@ -37,7 +45,7 @@ import alex.example.ximalaya.utils.LogUtil;
 import alex.example.ximalaya.views.RoundRectImageView;
 import alex.example.ximalaya.views.UILoader;
 
-public class DetailActivity extends BaseActivity implements IAlbumDetailViewCallBack, UILoader.OnRetryClickListener, DetailListAdapter.ItemClickListener {
+public class DetailActivity extends BaseActivity implements IAlbumDetailViewCallBack, UILoader.OnRetryClickListener, DetailListAdapter.ItemClickListener, IPlayerCallBack {
 
     private static final String TAG ="DetailActivity" ;
     private ImageView mLargeCover;
@@ -51,6 +59,13 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
     private FrameLayout mDetailListContainer;
     private UILoader mUiLoader;
     private long mCurrentId=-1;
+    private ImageView mPlayControlBtn;
+    private TextView mPlayControlTv;
+    private PlayPresenter mPlayPresenter;
+    private List<Track> mCurrentTracks = null;
+    private final static int DEFAULT_PLAY_INDEX = 0;
+    private TwinklingRefreshLayout mRefreshLayout;
+    private String mCurrentTrackTitle;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -61,16 +76,28 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
         getWindow().setStatusBarColor(Color.TRANSPARENT);
 
         initView();
+        //这个是专辑详情的presenter
         mAlbumDetailPresenter = AlbumDetailPresenter.getInstance();
         mAlbumDetailPresenter.registerViewCallBack(this);
-
+        //这个是播放器的presenter
+        mPlayPresenter = PlayPresenter.getPlayPresenter();
+        mPlayPresenter.registerViewCallBack(this);
+        updatePlayState(mPlayPresenter.isPlaying());
+        initListener();
     }
+
+
+
 
     private void initView() {
         mLargeCover = this.findViewById(R.id.iv_large_cover);
         mSmallCover = this.findViewById(R.id.riv_small_cover);
         mAlbumTitle = this.findViewById(R.id.tv_album_title);
         mAlbumAuthor = this.findViewById(R.id.tv_album_author);
+        //播放控制的图标
+        mPlayControlBtn = this.findViewById(R.id.detail_play_control);
+        mPlayControlTv = this.findViewById(R.id.play_control_tv);
+        mPlayControlTv.setSelected(true);
 
         mDetailListContainer = this.findViewById(R.id.detail_list_container);
         //
@@ -85,12 +112,51 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
             mDetailListContainer.addView(mUiLoader);
             mUiLoader.setOnRetryClickListener(DetailActivity.this);
         }
-
     }
+
+    private void initListener() {
+        if (mPlayControlBtn != null) {
+            mPlayControlBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mPlayPresenter != null) {
+                        //判断播放器是否有播放列表
+                        //TODO:
+                        boolean has = mPlayPresenter.hsaPlayList();
+                        if (has){
+                            //控制播放器的状态
+                            handlePlayControl();
+                        }else {
+                            handleNoPlayList();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * 当播放器内没有播放内容
+     */
+    private void handleNoPlayList() {
+        mPlayPresenter.setPlayList(mCurrentTracks,DEFAULT_PLAY_INDEX);
+    }
+
+    private void handlePlayControl() {
+        if (mPlayPresenter.isPlaying()) {
+            //正在播放就暂停
+            mPlayPresenter.pause();
+        }else {
+            mPlayPresenter.play();
+        }
+    }
+
+    private boolean mIsLoaderMore = false;
 
     private View createSuccessView(ViewGroup container) {
         View detailListView = LayoutInflater.from(this).inflate(R.layout.item_detail_list, container, false);
         mDetailList = detailListView.findViewById(R.id.album_detail_list);
+        mRefreshLayout = detailListView.findViewById(R.id.refresh_layout);
         //1.设置布局管理器
         LinearLayoutManager linearLayoutManager =new LinearLayoutManager(this);
         mDetailList.setLayoutManager(linearLayoutManager);
@@ -108,11 +174,43 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
             }
         });
         mDetailListAdapter.setItemClickListener(this);
+        BezierLayout headerView = new BezierLayout(this);
+        mRefreshLayout.setHeaderView(headerView);
+        mRefreshLayout.setMaxHeadHeight(140);
+        mRefreshLayout.setOnRefreshListener(new RefreshListenerAdapter() {
+            @Override
+            public void onRefresh(TwinklingRefreshLayout refreshLayout) {
+                super.onRefresh(refreshLayout);
+
+                BaseApplication.getHandler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(DetailActivity.this,"刷新成功...",Toast.LENGTH_SHORT).show();
+                        mRefreshLayout.finishRefreshing();
+                    }
+                },2000);
+            }
+
+            @Override
+            public void onLoadMore(TwinklingRefreshLayout refreshLayout) {
+                super.onLoadMore(refreshLayout);
+                    //加载更多内容
+                if (mAlbumDetailPresenter != null) {
+                    mAlbumDetailPresenter.loadMore();
+                    mIsLoaderMore=true;
+                }
+            }
+        });
         return detailListView;
     }
 
     @Override
     public void onDetailListLoaded(List<Track> tracks) {
+        if (mIsLoaderMore && mRefreshLayout!=null) {
+            mRefreshLayout.finishLoadmore();
+            mIsLoaderMore=false;
+        }
+        this.mCurrentTracks = tracks;
         //判断结果，根据结果控制UI显示
         if (tracks==null||tracks.size()==0) {
             if (mUiLoader != null) {
@@ -174,6 +272,20 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
     }
 
     @Override
+    public void onLoaderMoreFinished(int size) {
+        if (size>0) {
+            Toast.makeText(this,"成功加载了"+size+"个节目",Toast.LENGTH_SHORT).show();
+        }else {
+            Toast.makeText(this,"没有更多了",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRefreshFinished(int size) {
+
+    }
+
+    @Override
     public void onRetryClick() {
         //表示用户网络不佳的时候点击了重新加载
         if (mAlbumDetailPresenter != null) {
@@ -189,5 +301,94 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
         //跳转到播放器界面
         Intent intent = new Intent(this,PlayerActivity.class);
         startActivity(intent);
+    }
+
+    /**
+     * 根据播放状态修改
+     * @param playing
+     */
+    private void updatePlayState(boolean playing) {
+        if (mPlayControlBtn != null && mPlayControlTv!=null) {
+            mPlayControlBtn.setImageResource(playing?R.drawable.selector_play_control_pause:R.drawable.selector_play_control_play);
+            if (!playing) {
+                mPlayControlTv.setText(R.string.click_play_tips_text);
+            }else {
+                if (TextUtils.isEmpty(mCurrentTrackTitle)) {
+                    mPlayControlTv.setText(mCurrentTrackTitle);
+                }
+            }
+        }
+    }
+    @Override
+    public void onPlayStart() {
+        //修改图标为暂停的，文字修改为正在播放
+        updatePlayState(true);
+    }
+
+    @Override
+    public void onPlayPause() {
+        //修改图标为播放的，文字修改为已暂停
+        updatePlayState(false);
+    }
+
+    @Override
+    public void onPlayStop() {
+        //修改图标为播放的，文字修改为已暂停
+        updatePlayState(false);
+    }
+
+    @Override
+    public void onPlayError() {
+
+    }
+
+    @Override
+    public void onNextPlay(Track track) {
+
+    }
+
+    @Override
+    public void onPrePlay(Track track) {
+
+    }
+
+    @Override
+    public void onListLoaded(List<Track> list) {
+
+    }
+
+    @Override
+    public void onPlayModeChange(XmPlayListControl.PlayMode playMode) {
+
+    }
+
+    @Override
+    public void onProgressChange(int currentProgress, int total) {
+
+    }
+
+    @Override
+    public void onAdLoading() {
+
+    }
+
+    @Override
+    public void onAdFinished() {
+
+    }
+
+    @Override
+    public void onTrackUpdate(Track track, int playIndex) {
+        if (track != null) {
+            mCurrentTrackTitle = track.getTrackTitle();
+            if (!TextUtils.isEmpty(mCurrentTrackTitle) && mPlayControlTv!=null) {
+                mPlayControlTv.setText(mCurrentTrackTitle);
+            }
+        }
+    }
+
+    @Override
+    public void updateListOrder(boolean isReverse) {
+
     }
 }

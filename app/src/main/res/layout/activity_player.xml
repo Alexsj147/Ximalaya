@@ -78,7 +78,7 @@
                 android:layout_width="0dp"
                 android:layout_height="25dp"
                 android:layout_weight="1"
-                android:src="@drawable/selector_player_mode_list_order"/>
+                android:src="@drawable/selector_player_mode_list_reverse"/>
 
             <ImageView
                 android:id="@+id/play_pre"

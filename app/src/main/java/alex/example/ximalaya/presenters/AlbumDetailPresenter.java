@@ -23,6 +23,11 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     private static final String TAG = "AlbumDetailPresenter";
     private Album mTargetAlbum = null;
     private List<IAlbumDetailViewCallBack> mCallBacks = new ArrayList<>();
+    private List<Track> mTracks = new ArrayList<>();
+    //当前的专辑id
+    private int mCurrentAlbumId = -1;
+    //当前的页码
+    private int mCurrentPageIndex = 0;
 
     private AlbumDetailPresenter(){
 
@@ -46,16 +51,17 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
 
     @Override
     public void loadMore() {
-
+        //加载更多内容
+        mCurrentPageIndex++;
+        //传入true，表示结果会追加到列表后方
+        doLoaded(true);
     }
 
-    @Override
-    public void getAlbumDetail(int albumID, int page) {
-        //根据页码和专辑id获取数据
+    private void doLoaded(final boolean isLoadedMore){
         Map<String, String> map = new HashMap<>();
-        map.put(DTransferConstants.ALBUM_ID, albumID+"");
+        map.put(DTransferConstants.ALBUM_ID,mCurrentAlbumId+"");
         map.put(DTransferConstants.SORT, "asc");
-        map.put(DTransferConstants.PAGE, page+"");
+        map.put(DTransferConstants.PAGE, mCurrentPageIndex+"");
         map.put(DTransferConstants.PAGE_SIZE, Constants.COUNT_DEFAULT+"");
         CommonRequest.getTracks(map, new IDataCallBack<TrackList>() {
             @Override
@@ -63,17 +69,49 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
                 if (trackList != null) {
                     List<Track> tracks = trackList.getTracks();
                     LogUtil.d(TAG,"tracks size is ==> " +tracks.size());
-                    handleAlbumDetailResult(tracks);
+                    if (isLoadedMore) {
+                        //上拉加载，结果放在后面
+                        mTracks.addAll(tracks);
+                        int size = tracks.size();
+                        handleLoaderMoreResult(size);
+                    }else {
+                        //下拉加载，结果放在前面
+                        mTracks.addAll(0,tracks);
+                    }
+                    handleAlbumDetailResult(mTracks);
                 }
             }
 
             @Override
             public void onError(int errorCode, String errorMsg) {
+                if (isLoadedMore) {
+                    mCurrentPageIndex--;
+                }
                 LogUtil.d(TAG,"errorCode -- > " + errorCode);
                 LogUtil.d(TAG,"errorMsg  -- > " + errorMsg);
                 handlerError(errorCode,errorMsg);
             }
         });
+    }
+
+    /**
+     *处理加载更多的结果
+     * @param size
+     */
+    private void handleLoaderMoreResult(int size) {
+        for (IAlbumDetailViewCallBack callBack : mCallBacks) {
+            callBack.onLoaderMoreFinished(size);
+        }
+    }
+
+    @Override
+    public void getAlbumDetail(int albumID, int page) {
+        mTracks.clear();
+
+        this.mCurrentAlbumId = albumID;
+        this.mCurrentPageIndex = page;
+        //根据页码和专辑id获取数据
+        doLoaded(false);
     }
 
     /**
