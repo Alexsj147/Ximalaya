@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Ximalaya</string>
+    <string name="app_name">喜马拉雅</string>
     <string-array name="indicator_title">
         <item>推荐</item>
         <item>订阅</item>
@@ -13,4 +13,5 @@
     <string name="order_text_desc">逆序</string>
 
     <string name="click_play_tips_text">点击播放</string>
+    <string name="listener_as_you_lick">随便听听</string>
 </resources>

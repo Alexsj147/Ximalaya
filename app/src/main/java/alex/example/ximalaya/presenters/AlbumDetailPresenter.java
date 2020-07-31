@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import alex.example.ximalaya.api.XimalayaApi;
 import alex.example.ximalaya.interfaces.IAlbumDetailPresenter;
 import alex.example.ximalaya.interfaces.IAlbumDetailViewCallBack;
 import alex.example.ximalaya.utils.Constants;
@@ -58,12 +59,8 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     }
 
     private void doLoaded(final boolean isLoadedMore){
-        Map<String, String> map = new HashMap<>();
-        map.put(DTransferConstants.ALBUM_ID,mCurrentAlbumId+"");
-        map.put(DTransferConstants.SORT, "asc");
-        map.put(DTransferConstants.PAGE, mCurrentPageIndex+"");
-        map.put(DTransferConstants.PAGE_SIZE, Constants.COUNT_DEFAULT+"");
-        CommonRequest.getTracks(map, new IDataCallBack<TrackList>() {
+        XimalayaApi ximalayaApi = XimalayaApi.getXimalayaApi();
+        ximalayaApi.getAlbumDetail(new IDataCallBack<TrackList>() {
             @Override
             public void onSuccess(TrackList trackList) {
                 if (trackList != null) {
@@ -91,7 +88,7 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
                 LogUtil.d(TAG,"errorMsg  -- > " + errorMsg);
                 handlerError(errorCode,errorMsg);
             }
-        });
+        },mCurrentAlbumId,mCurrentPageIndex);
     }
 
     /**

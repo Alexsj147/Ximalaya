@@ -51,7 +51,7 @@ public class PlayListAdapter extends RecyclerView.Adapter<PlayListAdapter.InnerH
         //设置字体颜色
         mTrackTitleTv.setTextColor(BaseApplication.
                 getAppContext().getResources().
-                getColor(playingIndex==position?R.color.secondColor:R.color.alex_text_title));
+                getColor(playingIndex==position?R.color.secondColor:R.color.sub_text_title));
         mTrackTitleTv.setText(track.getTrackTitle());
         //找到播放状态的图片
         mPlayingIconView = holder.itemView.findViewById(R.id.play_icon_iv);

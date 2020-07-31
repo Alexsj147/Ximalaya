@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import alex.example.ximalaya.api.XimalayaApi;
 import alex.example.ximalaya.interfaces.IRecommendCallBack;
 import alex.example.ximalaya.interfaces.IRecommendPresenter;
 import alex.example.ximalaya.utils.Constants;
@@ -21,6 +22,7 @@ public class RecommendPresenter implements IRecommendPresenter {
     private static final String TAG = "RecommendPresenter";
 
     private List<IRecommendCallBack> mCallBacks = new ArrayList<>();
+    private List<Album> mCurrentRecommend = null;
 
     private RecommendPresenter(){
 
@@ -41,6 +43,15 @@ public class RecommendPresenter implements IRecommendPresenter {
         }
         return sInstance;
     }
+
+    /**
+     * 获取当前的推荐专辑的列表
+     * @return 推荐专辑的列表，使用前判空
+     */
+    public List<Album> getCurrentRecommend(){
+        return mCurrentRecommend;
+    }
+
     /**
      * 获取推荐内容，其实就是猜你喜欢
      * 接口：3.10.6 获取猜你喜欢专辑
@@ -50,9 +61,8 @@ public class RecommendPresenter implements IRecommendPresenter {
         //获取推荐内容
         //封装参数
         updateLoading();
-        Map<String, String> map = new HashMap<String, String>();
-        map.put(DTransferConstants.LIKE_COUNT, Constants.COUNT_RECOMMEND +"");
-        CommonRequest.getGuessLikeAlbum(map, new IDataCallBack<GussLikeAlbumList>() {
+        XimalayaApi ximalayaApi = XimalayaApi.getXimalayaApi();
+        ximalayaApi.getRecommendList(new IDataCallBack<GussLikeAlbumList>() {
             @Override
             public void onSuccess(GussLikeAlbumList gussLikeAlbumList) {
                 LogUtil.d(TAG,"thread name -->" + Thread.currentThread().getName());
@@ -99,6 +109,7 @@ public class RecommendPresenter implements IRecommendPresenter {
                 for (IRecommendCallBack callBack : mCallBacks) {
                     callBack.onRecommendListLoaded(albumList);
                 }
+                this.mCurrentRecommend = albumList;
             }
         }
     }
