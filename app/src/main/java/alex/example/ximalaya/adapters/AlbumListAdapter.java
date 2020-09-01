@@ -18,15 +18,15 @@ import java.util.List;
 import alex.example.ximalaya.R;
 import alex.example.ximalaya.utils.LogUtil;
 
-public class RecommendListAdapter extends RecyclerView.Adapter<RecommendListAdapter.InnewHolder> {
+public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.InnewHolder> {
 
     private List<Album> mData = new ArrayList<>();
-    private static final String TAG = "RecommendListAdapter";
+    private static final String TAG = "AlbumListAdapter";
     private onRecommendItemClickListener mItemClickListener = null;
 
     @NonNull
     @Override
-    public RecommendListAdapter.InnewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public AlbumListAdapter.InnewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         //加载view
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_recommend, parent, false);
 
@@ -34,7 +34,7 @@ public class RecommendListAdapter extends RecyclerView.Adapter<RecommendListAdap
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecommendListAdapter.InnewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull AlbumListAdapter.InnewHolder holder, final int position) {
         //设置数据
         holder.itemView.setTag(position);
         holder.itemView.setOnClickListener(new View.OnClickListener() {

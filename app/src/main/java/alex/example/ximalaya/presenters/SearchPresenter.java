@@ -57,15 +57,22 @@ public class SearchPresenter implements ISearchPresenter {
                 List<Album> albums = searchAlbumList.getAlbums();
                 if (albums != null) {
                     LogUtil.d(TAG,"albums size -- > " + albums.size());
+                    for (ISearchCallBack iSearchCallBack : mCallBacks) {
+                        iSearchCallBack.onSearchResultLoaded(albums);
+                    }
                 }else {
                     LogUtil.d(TAG,"albums is null");
                 }
+
             }
 
             @Override
             public void onError(int errorCode, String errorMsg) {
                     LogUtil.d(TAG,"errorCode..."+errorCode);
                     LogUtil.d(TAG,"errorMsg..."+errorMsg);
+                for (ISearchCallBack iSearchCallBack : mCallBacks) {
+                    iSearchCallBack.onError(errorCode,errorMsg);
+                }
             }
         });
     }
@@ -82,17 +89,22 @@ public class SearchPresenter implements ISearchPresenter {
 
     @Override
     public void getHotWord() {
+        //todo:做一个热词缓存
         mXimalayaApi.getHotWords(new IDataCallBack<HotWordList>() {
             @Override
             public void onSuccess(HotWordList hotWordList) {
                 List<HotWord> hotWords = hotWordList.getHotWordList();
                 LogUtil.d(TAG,"hotWords size is "+hotWords.size());
+                for (ISearchCallBack iSearchCallBack : mCallBacks) {
+                    iSearchCallBack.onHotWordLoaded(hotWords);
+                }
             }
 
             @Override
             public void onError(int errorCode, String errorMsg) {
                 LogUtil.d(TAG,"getHotWord errorCode..."+errorCode);
                 LogUtil.d(TAG,"getHotWord errorMsg..."+errorMsg);
+
             }
         });
     }
@@ -105,6 +117,9 @@ public class SearchPresenter implements ISearchPresenter {
                     if (suggestWords != null) {
                         List<QueryResult> keyWordList = suggestWords.getKeyWordList();
                         LogUtil.d(TAG,"keyWordList size is "+keyWordList.size());
+                        for (ISearchCallBack iSearchCallBack : mCallBacks) {
+                            iSearchCallBack.onRecommendWordLoaded(keyWordList);
+                        }
                     }
                 }
 

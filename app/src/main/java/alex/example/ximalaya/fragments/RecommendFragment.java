@@ -19,18 +19,18 @@ import java.util.List;
 
 import alex.example.ximalaya.DetailActivity;
 import alex.example.ximalaya.R;
-import alex.example.ximalaya.adapters.RecommendListAdapter;
+import alex.example.ximalaya.adapters.AlbumListAdapter;
 import alex.example.ximalaya.base.BaseFragment;
 import alex.example.ximalaya.interfaces.IRecommendCallBack;
 import alex.example.ximalaya.presenters.AlbumDetailPresenter;
 import alex.example.ximalaya.presenters.RecommendPresenter;
 import alex.example.ximalaya.views.UILoader;
 
-public class RecommendFragment extends BaseFragment implements IRecommendCallBack, UILoader.OnRetryClickListener, RecommendListAdapter.onRecommendItemClickListener {
+public class RecommendFragment extends BaseFragment implements IRecommendCallBack, UILoader.OnRetryClickListener, AlbumListAdapter.onRecommendItemClickListener {
     private final static String TAG = "RecommendFragment";
     private View mRootView;
     private RecyclerView mRecommendRv;
-    private RecommendListAdapter mRecommendListAdapter;
+    private AlbumListAdapter mRecommendListAdapter;
     private RecommendPresenter mRecommendPresenter;
     private UILoader mUiLoader;
 
@@ -85,7 +85,7 @@ public class RecommendFragment extends BaseFragment implements IRecommendCallBac
             }
         });
         //3.设置适配器
-        mRecommendListAdapter = new RecommendListAdapter();
+        mRecommendListAdapter = new AlbumListAdapter();
         mRecommendRv.setAdapter(mRecommendListAdapter);
         mRecommendListAdapter.setOnRecommendItemClickListener(this);
         return mRootView;
