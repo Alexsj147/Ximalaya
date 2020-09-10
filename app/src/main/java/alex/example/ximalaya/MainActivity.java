@@ -25,6 +25,7 @@ import java.util.List;
 
 import alex.example.ximalaya.adapters.IndicatorAdapter;
 import alex.example.ximalaya.adapters.MainContentAdapter;
+import alex.example.ximalaya.data.XimalayaDBHelper;
 import alex.example.ximalaya.interfaces.IPlayerCallBack;
 import alex.example.ximalaya.presenters.PlayPresenter;
 import alex.example.ximalaya.presenters.RecommendPresenter;
@@ -53,6 +54,7 @@ public class MainActivity extends FragmentActivity implements IPlayerCallBack {
         initView();
         initEvent();
         initPresenter();
+
         /*Map<String, String> map = new HashMap<>();
         CommonRequest.getCategories(map, new IDataCallBack<CategoryList>() {
             @Override
@@ -89,7 +91,7 @@ public class MainActivity extends FragmentActivity implements IPlayerCallBack {
             public void onTapClick(int index) {
                 LogUtil.d(TAG,"click index is ==> " + index);
                 if (mContentPager != null) {
-                    mContentPager.setCurrentItem(index);
+                    mContentPager.setCurrentItem(index,false);
                 }
             }
         });

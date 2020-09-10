@@ -18,11 +18,10 @@ import com.ximalaya.ting.android.opensdk.player.service.XmPlayListControl;
 import com.ximalaya.ting.android.opensdk.player.service.XmPlayerException;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import alex.example.ximalaya.api.XimalayaApi;
+import alex.example.ximalaya.data.XimalayaApi;
 import alex.example.ximalaya.base.BaseApplication;
 import alex.example.ximalaya.interfaces.IPlayerCallBack;
 import alex.example.ximalaya.interfaces.IPlayerPresenter;
@@ -236,7 +235,6 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
 
     @Override
     public void playByAlbumId(long id) {
-        //TODO:
         //1.获取到专辑的内容
         XimalayaApi ximalayaApi = XimalayaApi.getXimalayaApi();
         ximalayaApi.getAlbumDetail(new IDataCallBack<TrackList>() {
@@ -264,6 +262,11 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
 
     @Override
     public void registerViewCallBack(IPlayerCallBack iPlayerCallBack) {
+        if (!mIPlayerCallBacks.contains(iPlayerCallBack)) {
+            mIPlayerCallBacks.add(iPlayerCallBack);
+        }
+        //更新之前，让UI的Pager有数据
+        getPlayList();
         //通知当前节目
         iPlayerCallBack.onTrackUpdate(mCurrentTrack,mCurrentIndex);
         iPlayerCallBack.onProgressChange(mCurrentProgressPosition,mCurrentProgressPosition);
@@ -273,9 +276,6 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
         int modeIndex = mPlayModeSp.getInt(PLAY_MODE_SP_KEY, PLAY_MODEL_LIST_INT);
         mCurrentPlayMode=getModeByInt(modeIndex);
         iPlayerCallBack.onPlayModeChange(mCurrentPlayMode);
-        if (!mIPlayerCallBacks.contains(iPlayerCallBack)) {
-            mIPlayerCallBacks.add(iPlayerCallBack);
-        }
     }
 
     private void handlePlayState(IPlayerCallBack iPlayerCallBack) {
@@ -378,7 +378,9 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
         if (lastModel != null) {
             LogUtil.d(TAG,"lastModel" + lastModel.getKind());
         }
-        LogUtil.d(TAG,"curModel"  + curModel.getKind());
+        if (curModel != null) {
+            LogUtil.d(TAG,"curModel"  + curModel.getKind());
+        }
         //curModel代表的是当前的内容
         //通过getKind()获取种类
         //track代表track
@@ -392,6 +394,9 @@ public class PlayPresenter implements IPlayerPresenter, IXmAdsStatusListener, IX
         if (curModel instanceof Track){
             Track currentTrack = (Track) curModel;
             mCurrentTrack = currentTrack;
+            //保存播放记录
+            HistoryPresenter historyPresenter = HistoryPresenter.getHistoryPresenter();
+            historyPresenter.addHistory(currentTrack);
             //LogUtil.d(TAG,"title == > "  + currentTrack.getTrackTitle());
             //更新UI
             for (IPlayerCallBack iPlayerCallBack : mIPlayerCallBacks) {

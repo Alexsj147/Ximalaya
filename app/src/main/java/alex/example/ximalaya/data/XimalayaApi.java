@@ -1,4 +1,4 @@
-package alex.example.ximalaya.api;
+package alex.example.ximalaya.data;
 
 import com.ximalaya.ting.android.opensdk.constants.DTransferConstants;
 import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;

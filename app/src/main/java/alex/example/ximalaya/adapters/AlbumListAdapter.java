@@ -1,5 +1,6 @@
 package alex.example.ximalaya.adapters;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,13 +17,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alex.example.ximalaya.R;
-import alex.example.ximalaya.utils.LogUtil;
 
 public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.InnewHolder> {
 
     private List<Album> mData = new ArrayList<>();
     private static final String TAG = "AlbumListAdapter";
-    private onRecommendItemClickListener mItemClickListener = null;
+    private onAlbumItemClickListener mItemClickListener = null;
+    private onAlbumItemLongClickListener mLongClickListener = null;
 
     @NonNull
     @Override
@@ -44,10 +45,21 @@ public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.Inne
                     int clickPositon = (int) v.getTag();
                     mItemClickListener.onItemClick(clickPositon,mData.get(clickPositon));
                 }
-                LogUtil.d(TAG,"holder.itemView click -->" + v.getTag());
+                //LogUtil.d(TAG,"holder.itemView click -->" + v.getTag());
             }
         });
         holder.setData(mData.get(position));
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (mLongClickListener != null) {
+                    int clickPosition = (int) v.getTag();
+                    mLongClickListener.onItemLongClick(mData.get(clickPosition));
+                }
+                //true表示消费掉该事件
+                return false;
+            }
+        });
     }
 
     @Override
@@ -67,6 +79,7 @@ public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.Inne
         //更新UI
         notifyDataSetChanged();
     }
+
 
     public class InnewHolder extends RecyclerView.ViewHolder {
         public InnewHolder(@NonNull View itemView) {
@@ -91,15 +104,29 @@ public class AlbumListAdapter extends RecyclerView.Adapter<AlbumListAdapter.Inne
             albumDesTv.setText(album.getAlbumIntro());
             albumPlayCountTv.setText(album.getPlayCount()+"");
             albumContentCountTv.setText(album.getIncludeTrackCount()+"");
-
-            Picasso.with(itemView.getContext()).load(album.getCoverUrlLarge()).into(albumCoverIv);
+            String coverUrlLarge = album.getCoverUrlLarge();
+            if (!TextUtils.isEmpty(coverUrlLarge)) {
+                Picasso.with(itemView.getContext()).load(coverUrlLarge).into(albumCoverIv);
+            }else {
+                albumCoverIv.setImageResource(R.mipmap.ximalaya_logo);
+            }
         }
     }
 
-    public void setOnRecommendItemClickListener(onRecommendItemClickListener listener){
+    public void setAlbumItemClickListener(onAlbumItemClickListener listener){
         this.mItemClickListener = listener;
     }
-    public interface onRecommendItemClickListener{
+    public interface onAlbumItemClickListener {
         void onItemClick(int position, Album album);
+    }
+
+    public void setonAlbumItemLongClickListener(onAlbumItemLongClickListener listener){
+        this.mLongClickListener = listener;
+    }
+    /**
+     * item长按的接口
+     */
+    public interface onAlbumItemLongClickListener{
+        void onItemLongClick(Album album);
     }
 }

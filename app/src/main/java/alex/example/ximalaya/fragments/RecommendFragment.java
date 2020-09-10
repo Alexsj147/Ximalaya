@@ -26,7 +26,7 @@ import alex.example.ximalaya.presenters.AlbumDetailPresenter;
 import alex.example.ximalaya.presenters.RecommendPresenter;
 import alex.example.ximalaya.views.UILoader;
 
-public class RecommendFragment extends BaseFragment implements IRecommendCallBack, UILoader.OnRetryClickListener, AlbumListAdapter.onRecommendItemClickListener {
+public class RecommendFragment extends BaseFragment implements IRecommendCallBack, UILoader.OnRetryClickListener, AlbumListAdapter.onAlbumItemClickListener {
     private final static String TAG = "RecommendFragment";
     private View mRootView;
     private RecyclerView mRecommendRv;
@@ -87,7 +87,7 @@ public class RecommendFragment extends BaseFragment implements IRecommendCallBac
         //3.设置适配器
         mRecommendListAdapter = new AlbumListAdapter();
         mRecommendRv.setAdapter(mRecommendListAdapter);
-        mRecommendListAdapter.setOnRecommendItemClickListener(this);
+        mRecommendListAdapter.setAlbumItemClickListener(this);
         return mRootView;
     }
 

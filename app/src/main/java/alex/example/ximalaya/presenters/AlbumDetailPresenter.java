@@ -1,23 +1,17 @@
 package alex.example.ximalaya.presenters;
 
-import com.ximalaya.ting.android.opensdk.constants.DTransferConstants;
-import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
 import com.ximalaya.ting.android.opensdk.datatrasfer.IDataCallBack;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
 import com.ximalaya.ting.android.opensdk.model.track.Track;
 import com.ximalaya.ting.android.opensdk.model.track.TrackList;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import alex.example.ximalaya.api.XimalayaApi;
+import alex.example.ximalaya.data.XimalayaApi;
 import alex.example.ximalaya.interfaces.IAlbumDetailPresenter;
 import alex.example.ximalaya.interfaces.IAlbumDetailViewCallBack;
-import alex.example.ximalaya.utils.Constants;
 import alex.example.ximalaya.utils.LogUtil;
-import okhttp3.internal.http2.ErrorCode;
 
 public class AlbumDetailPresenter implements IAlbumDetailPresenter {
 
@@ -65,7 +59,7 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
             public void onSuccess(TrackList trackList) {
                 if (trackList != null) {
                     List<Track> tracks = trackList.getTracks();
-                    LogUtil.d(TAG,"tracks size is ==> " +tracks.size());
+                    //LogUtil.d(TAG,"tracks size is ==> " +tracks.size());
                     if (isLoadedMore) {
                         //上拉加载，结果放在后面
                         mTracks.addAll(tracks);

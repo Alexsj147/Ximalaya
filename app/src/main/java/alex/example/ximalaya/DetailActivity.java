@@ -33,19 +33,22 @@ import net.lucode.hackware.magicindicator.buildins.UIUtil;
 
 import java.util.List;
 
-import alex.example.ximalaya.adapters.DetailListAdapter;
+import alex.example.ximalaya.adapters.TrackListAdapter;
 import alex.example.ximalaya.base.BaseActivity;
 import alex.example.ximalaya.base.BaseApplication;
 import alex.example.ximalaya.interfaces.IAlbumDetailViewCallBack;
 import alex.example.ximalaya.interfaces.IPlayerCallBack;
+import alex.example.ximalaya.interfaces.ISubscriptionCallBack;
 import alex.example.ximalaya.presenters.AlbumDetailPresenter;
 import alex.example.ximalaya.presenters.PlayPresenter;
+import alex.example.ximalaya.presenters.SubscriptionPresenter;
+import alex.example.ximalaya.utils.Constants;
 import alex.example.ximalaya.utils.ImageBlur;
 import alex.example.ximalaya.utils.LogUtil;
 import alex.example.ximalaya.views.RoundRectImageView;
 import alex.example.ximalaya.views.UILoader;
 
-public class DetailActivity extends BaseActivity implements IAlbumDetailViewCallBack, UILoader.OnRetryClickListener, DetailListAdapter.ItemClickListener, IPlayerCallBack {
+public class DetailActivity extends BaseActivity implements IAlbumDetailViewCallBack, UILoader.OnRetryClickListener, TrackListAdapter.ItemClickListener, IPlayerCallBack, ISubscriptionCallBack {
 
     private static final String TAG ="DetailActivity" ;
     private ImageView mLargeCover;
@@ -55,7 +58,7 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
     private AlbumDetailPresenter mAlbumDetailPresenter;
     private int mCurrentPage = 1 ;
     private RecyclerView mDetailList;
-    private DetailListAdapter mDetailListAdapter;
+    private TrackListAdapter mDetailListAdapter;
     private FrameLayout mDetailListContainer;
     private UILoader mUiLoader;
     private long mCurrentId=-1;
@@ -66,6 +69,9 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
     private final static int DEFAULT_PLAY_INDEX = 0;
     private TwinklingRefreshLayout mRefreshLayout;
     private String mCurrentTrackTitle;
+    private TextView mSubBtn;
+    private SubscriptionPresenter mSubscriptionPresenter;
+    private Album mCurrentAlbum;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -76,18 +82,46 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
         getWindow().setStatusBarColor(Color.TRANSPARENT);
 
         initView();
+        initPresenter();
+        //设置订阅按钮的状态
+        updateSubState();
+        updatePlayState(mPlayPresenter.isPlaying());
+        initListener();
+    }
+
+    private void updateSubState() {
+        if (mSubscriptionPresenter != null) {
+            boolean isSub = mSubscriptionPresenter.isSub(mCurrentAlbum);
+            mSubBtn.setText(isSub?R.string.cancel_subs_text:R.string.sub_tips_text);
+        }
+    }
+
+    private void initPresenter() {
         //这个是专辑详情的presenter
         mAlbumDetailPresenter = AlbumDetailPresenter.getInstance();
         mAlbumDetailPresenter.registerViewCallBack(this);
         //这个是播放器的presenter
         mPlayPresenter = PlayPresenter.getPlayPresenter();
         mPlayPresenter.registerViewCallBack(this);
-        updatePlayState(mPlayPresenter.isPlaying());
-        initListener();
+        //订阅相关的presenter
+        mSubscriptionPresenter = SubscriptionPresenter.getInstance();
+        mSubscriptionPresenter.getSubscriptionList();
+        mSubscriptionPresenter.registerViewCallBack(this);
     }
 
-
-
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mAlbumDetailPresenter != null) {
+            mAlbumDetailPresenter.unRegisterViewCallBack(this);
+        }
+        if (mPlayPresenter != null) {
+            mPlayPresenter.unRegisterViewCallBack(this);
+        }
+        if (mSubscriptionPresenter != null) {
+            mSubscriptionPresenter.unRegisterViewCallBack(this);
+        }
+    }
 
     private void initView() {
         mLargeCover = this.findViewById(R.id.iv_large_cover);
@@ -112,6 +146,9 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
             mDetailListContainer.addView(mUiLoader);
             mUiLoader.setOnRetryClickListener(DetailActivity.this);
         }
+        //订阅
+        mSubBtn = this.findViewById(R.id.detail_sub_btn);
+
     }
 
     private void initListener() {
@@ -121,7 +158,6 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
                 public void onClick(View v) {
                     if (mPlayPresenter != null) {
                         //判断播放器是否有播放列表
-                        //TODO:
                         boolean has = mPlayPresenter.hasPlayList();
                         if (has){
                             //控制播放器的状态
@@ -133,6 +169,20 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
                 }
             });
         }
+        mSubBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mSubscriptionPresenter != null) {
+                    boolean isSub = mSubscriptionPresenter.isSub(mCurrentAlbum);
+                    //如果没有订阅，就去订阅，已订阅就取消
+                    if (isSub) {
+                        mSubscriptionPresenter.deleteSubscription(mCurrentAlbum);
+                    }else {
+                        mSubscriptionPresenter.addSubscription(mCurrentAlbum);
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -161,7 +211,7 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
         LinearLayoutManager linearLayoutManager =new LinearLayoutManager(this);
         mDetailList.setLayoutManager(linearLayoutManager);
         //2.设置适配器
-        mDetailListAdapter = new DetailListAdapter();
+        mDetailListAdapter = new TrackListAdapter();
         mDetailList.setAdapter(mDetailListAdapter);
         //设置item的间距
         mDetailList.addItemDecoration(new RecyclerView.ItemDecoration() {
@@ -232,6 +282,7 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
 
     @Override
     public void onAlbumLoaded(Album album) {
+        this.mCurrentAlbum = album;
         //获取专辑的详情内容
         long id = album.getId();
         mCurrentId = id;
@@ -390,5 +441,41 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
     @Override
     public void updateListOrder(boolean isReverse) {
 
+    }
+
+    @Override
+    public void onAddResult(boolean isSuccess) {
+        if (isSuccess) {
+            //如果成功，修改UI成取消订阅
+            mSubBtn.setText(R.string.cancel_subs_text);
+            LogUtil.d(TAG,"mSubBtn text is " +mSubBtn.getText());
+        }
+        String tipsText  =  isSuccess?"订阅成功":"订阅失败";
+        Toast.makeText(this,tipsText,Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onDeleteResult(boolean isSuccess) {
+        if (isSuccess) {
+            //如果成功，修改UI成订阅
+            mSubBtn.setText(R.string.sub_tips_text);
+            LogUtil.d(TAG,"mSubBtn delete text is " +mSubBtn.getText());
+        }
+        String tipsText  = isSuccess?"删除成功":"删除失败";
+        Toast.makeText(this,tipsText,Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onSubscriptionLoaded(List<Album> albums) {
+            //在这个界面不需要处理
+        /*for (Album album : albums) {
+            LogUtil.d(TAG,"album -- >" + album.getAlbumTitle());
+        }*/
+    }
+
+    @Override
+    public void onSubFull() {
+        //处理一个即可
+        Toast.makeText(this,"订阅数量不能超过"+ Constants.MAX_SUB_COUNT +"！请删除！",Toast.LENGTH_SHORT).show();
     }
 }

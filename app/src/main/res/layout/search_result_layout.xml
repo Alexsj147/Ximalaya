@@ -3,12 +3,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/result_list_view"
+    <com.lcodecore.tkrefreshlayout.TwinklingRefreshLayout
+        android:id="@+id/search_result_refresh_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:overScrollMode="never"
-        android:visibility="gone" />
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/result_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never" />
+    </com.lcodecore.tkrefreshlayout.TwinklingRefreshLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/search_recommend_list"

@@ -1,20 +1,15 @@
 package alex.example.ximalaya.presenters;
 
-import com.ximalaya.ting.android.opensdk.constants.DTransferConstants;
-import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
 import com.ximalaya.ting.android.opensdk.datatrasfer.IDataCallBack;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
 import com.ximalaya.ting.android.opensdk.model.album.GussLikeAlbumList;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import alex.example.ximalaya.api.XimalayaApi;
+import alex.example.ximalaya.data.XimalayaApi;
 import alex.example.ximalaya.interfaces.IRecommendCallBack;
 import alex.example.ximalaya.interfaces.IRecommendPresenter;
-import alex.example.ximalaya.utils.Constants;
 import alex.example.ximalaya.utils.LogUtil;
 
 public class RecommendPresenter implements IRecommendPresenter {
@@ -23,6 +18,7 @@ public class RecommendPresenter implements IRecommendPresenter {
 
     private List<IRecommendCallBack> mCallBacks = new ArrayList<>();
     private List<Album> mCurrentRecommend = null;
+    private List<Album> mRecommendList;
 
     private RecommendPresenter(){
 
@@ -58,6 +54,11 @@ public class RecommendPresenter implements IRecommendPresenter {
      */
     @Override
     public void getRecommendList() {
+        //如果内容不为空，那么直接使用当前内容
+        if (mRecommendList != null&& mRecommendList.size()>0) {
+            handlerRecommendResult(mRecommendList);
+            return;
+        }
         //获取推荐内容
         //封装参数
         updateLoading();
@@ -66,17 +67,16 @@ public class RecommendPresenter implements IRecommendPresenter {
             @Override
             public void onSuccess(GussLikeAlbumList gussLikeAlbumList) {
                 LogUtil.d(TAG,"thread name -->" + Thread.currentThread().getName());
-                List<Album> albumList = gussLikeAlbumList.getAlbumList();
-                if (albumList != null) {
                     //LogUtil.d(TAG,"size --> " + albumList.size());
                     //更新UIread.currentThread().getName());
                     //获取数据成功
                     if (gussLikeAlbumList != null) {
+                        mRecommendList = gussLikeAlbumList.getAlbumList();
                         //updateRecommendUI(albumList);
-                        handlerRecommendResult(albumList);
+                        handlerRecommendResult(mRecommendList);
                     }
                 }
-            }
+
             @Override
             public void onError(int i, String s) {
                 //获取数据失败
